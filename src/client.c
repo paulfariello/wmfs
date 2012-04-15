@@ -927,7 +927,31 @@ client_apply_rule(struct client *c)
           FLAGAPPLY(flags, ((role && r->role && !strcmp(role, r->role)) || !role || !r->role), RROLE);
 
           if(flags & (RINSTANCE | RCLASS | RNAME) && flags & RROLE)
-               _apply_rule(c, r);
+          {
+               if(r->screen != -1)
+                    c->screen = screen_gb_id(r->screen);
+
+               c->tag = c->screen->seltag;
+               if(r->tag != -1)
+                    c->tag = tag_gb_id(c->screen, r->tag);
+
+               c->theme = r->theme;
+
+               /* free = false for originally free client */
+               if(r->flags & RULE_FREE)
+                    c->flags |=  CLIENT_FREE;
+               else
+                    c->flags &= ~CLIENT_FREE;
+
+               /* Free rule is not compatible with tab rule */
+               if(r->flags & RULE_TAB)
+                    W->flags ^= WMFS_TABNOC; /* < can be disable by client_tab_next_opened */
+
+               if(r->flags & RULE_IGNORE_TAG)
+                    c->flags |= CLIENT_IGNORE_TAG;
+
+               c->flags |= CLIENT_RULED;
+          }
           flags = 0;
      }
 
